@@ -1,0 +1,106 @@
+import os
+import base64
+from PyPDF2 import PdfReader, PdfWriter
+import tkinter as tk
+from tkinter import filedialog, messagebox
+from PIL import Image, ImageTk
+from io import BytesIO
+
+def gabungkan_semua_pdf(file_paths, output_path):
+    pdf_writer = PdfWriter()
+    for pdf_path in file_paths:
+        with open(pdf_path, 'rb') as pdf:
+            pdf_reader = PdfReader(pdf)
+            for page_num in range(len(pdf_reader.pages)):
+                pdf_writer.add_page(pdf_reader.pages[page_num])
+    with open(output_path, 'wb') as output_pdf:
+        pdf_writer.write(output_pdf)
+
+def pilih_file():
+    file_paths = filedialog.askopenfilenames(filetypes=[("PDF files", "*.pdf")])
+    if file_paths:
+        for file in file_paths:
+            if file not in selected_files:
+                selected_files.append(file)
+                file_list.insert(tk.END, file)
+
+def pilih_folder():
+    folder_path = filedialog.askdirectory()
+    if folder_path:
+        for root, _, files in os.walk(folder_path):
+            for file in files:
+                if file.lower().endswith(".pdf"):
+                    file_path = os.path.join(root, file)
+                    if file_path not in selected_files:
+                        selected_files.append(file_path)
+                        file_list.insert(tk.END, file_path)
+
+def hapus_file():
+    selected_indices = file_list.curselection()
+    for index in reversed(selected_indices):
+        selected_files.pop(index)
+        file_list.delete(index)
+
+def hapus_semua():
+    selected_files.clear()
+    file_list.delete(0, tk.END)
+
+def simpan_sebagai():
+    output_path = filedialog.asksaveasfilename(defaultextension=".pdf", filetypes=[("PDF files", "*.pdf")])
+    if output_path:
+        gabungkan_semua_pdf(selected_files, output_path)
+        messagebox.showinfo("Informasi", "File PDF berhasil digabungkan!")
+
+# Inisialisasi Tkinter
+root = tk.Tk()
+root.title("Rendatin Kab. Tasikmalaya")
+
+# Base64 string dari gambar logo
+base64_logo = "kode base64"  # Ganti dengan string Base64 yang dihasilkan
+
+# Dekode Base64 menjadi gambar
+logo_data = base64.b64decode(base64_logo)
+logo_image = Image.open(BytesIO(logo_data))
+logo_image = logo_image.resize((50, 50), Image.Resampling.LANCZOS)
+logo_photo = ImageTk.PhotoImage(logo_image)
+
+# Menambahkan logo di samping judul
+root.iconphoto(False, logo_photo)
+
+# Membuat frame untuk tombol dan listbox
+frame = tk.Frame(root)
+frame.pack(pady=20, padx=20)
+
+# Frame untuk tombol di bagian atas
+button_frame = tk.Frame(frame)
+button_frame.grid(row=0, column=0, columnspan=3, pady=10)
+
+# Tombol untuk memilih file
+btn_pilih_file = tk.Button(button_frame, text="Pilih File PDF", command=pilih_file)
+btn_pilih_file.grid(row=0, column=0, padx=20)
+
+# Tombol untuk memilih folder
+btn_pilih_folder = tk.Button(button_frame, text="Pilih Folder PDF", command=pilih_folder)
+btn_pilih_folder.grid(row=0, column=1, padx=20)
+
+# Listbox untuk menampilkan file yang dipilih
+file_list = tk.Listbox(frame, width=50, height=10, selectmode=tk.MULTIPLE)
+file_list.grid(row=1, column=0, columnspan=3, pady=10)
+
+# Tombol untuk menghapus file yang dipilih dari daftar
+btn_hapus_file = tk.Button(frame, text="Hapus File yang Dipilih", command=hapus_file)
+btn_hapus_file.grid(row=2, column=0, padx=10, pady=10)
+
+# Tombol untuk menghapus semua file dari daftar
+btn_hapus_semua = tk.Button(frame, text="Hapus Semua File", command=hapus_semua)
+btn_hapus_semua.grid(row=2, column=1, padx=10, pady=10)
+
+# Tombol untuk menyimpan hasil gabungan
+btn_simpan_sebagai = tk.Button(frame, text="Simpan Sebagai", command=simpan_sebagai)
+btn_simpan_sebagai.grid(row=2, column=2, padx=10, pady=10)
+
+# Variabel global untuk menyimpan file yang dipilih
+selected_files = []
+
+# Menjalankan aplikasi Tkinter
+root.mainloop()
